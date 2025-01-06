@@ -1,5 +1,5 @@
 # Dash imports: Essential components for creating the Dash web application
-from dash import Dash, dcc, html, Input, Output, _dash_renderer
+from dash import Dash, dcc, html, Input, Output, _dash_renderer, State
 
 # Backend imports: Data setup logic from the backend module
 from backend.data_setup import setup_data
@@ -15,7 +15,7 @@ _dash_renderer._set_react_version("18.2.0")
 # Components: Import custom components for graphs, tables, and buttons
 from components.graph_components import main_graph, spread_graph
 from components.table_components import main_table
-from components.button_components import last_day_toggle
+from components.button_components import last_day_toggle, table_slider
 
 # Initialize the Dash app
 external_stylesheets = [
@@ -55,6 +55,8 @@ app.layout = dmc.MantineProvider(
             # Graph displaying the shock prediction for NYIS
             dcc.Graph(id="main_graph", figure=main_graph(client.df, "NYISpjm shock X forecast", "NYIS pjm DA regular prediction", "NYIS pjm DA")),
             
+            table_slider("main_table_slider"),
+            
             # Table displaying the data for the first model
             main_table(pd.DataFrame(),["NYISpjm shock X forecast","NYIS pjm DA regular prediction"],"main_table"),
             
@@ -64,15 +66,23 @@ app.layout = dmc.MantineProvider(
             # Graph displaying the shock prediction for PJM
             dcc.Graph(id="main_graph2", figure=main_graph(client.df, "PJMnyis shock X forecast", "PJM nyis DA regular prediction", "PJM nyis DA")),
             
+            table_slider("main_table2_slider"),
+            
             # Table displaying the data for the second model
-            main_table(pd.DataFrame(),["NYISpjm shock X forecast","NYIS pjm DA regular prediction"], "main_table2"),
+            main_table(pd.DataFrame(),["PJMnyis shock X forecast", "PJM nyis DA regular prediction"], "main_table2"),
             
             # Heading for the spread graph
             html.H1("PJM to NYIS Shock models predicted spread", className="text-2xl font-bold"),
             
             # Graph displaying the spread between PJM and NYIS shock models
             dcc.Graph(id="spread_graph", figure=spread_graph(client.df, "PJM to NYIS shock spread")),
-        ],
+            
+            # Heading for the spread graph
+            html.H1("NYIS to PJM Shock models predicted spread", className="text-2xl font-bold"),
+            
+            # Graph displaying the spread between PJM and NYIS shock models
+            dcc.Graph(id="spread_graph2", figure=spread_graph(client.df, "NYIS to PJM shock spread")),
+        ]
     )
 )
 
@@ -81,33 +91,43 @@ app.layout = dmc.MantineProvider(
     [Output("main_graph", "figure"),
      Output("main_graph2", "figure"), 
      Output("spread_graph", "figure"),
+     Output("spread_graph2", "figure"),
      Output("main_table", "children"),
-     Output("main_table2", "children")],
-    [Input("last_day_toggle", "value")],  # Input is the value of the last_day_toggle (whether it's on or off)
+     Output("main_table2", "children"),
+     Output("main_table_slider", "className"),
+     Output("main_table2_slider", "className")],
+    [Input("last_day_toggle", "value"),
+     Input("main_table_slider","value"),
+     Input("main_table2_slider","value")],
 )
-def update_dashboard(last_day_toggle):
+def update_dashboard(last_day_toggle, main_table_slider, main_table2_slider):
+    
     # Access the data from the client
     df = client.df
     table_df = pd.DataFrame()  # Initialize an empty DataFrame for table data
     display = False  # Initially, do not display the table
+    
 
     # If the toggle is on, filter the data to only show the last day's data
     if last_day_toggle:
         last_day = client.df.index.max().date()  # Get the most recent date
         table_df = df = client.df[client.df.index.date == last_day]  # Filter data for the last day
         display = True  # Set display to True to show the table
-        
+    
+    slider_display="inline w-full" if display else "hidden w-full"
+      
     # Create the graphs with the updated data
     graph1 = main_graph(df, "NYISpjm shock X forecast", "NYIS pjm DA regular prediction", "NYIS pjm DA") 
     graph2 = main_graph(df, "PJMnyis shock X forecast", "PJM nyis DA regular prediction", "PJM nyis DA")
     graphS = spread_graph(df, "PJM to NYIS shock spread")
+    graphS2 = spread_graph(df, "NYIS to PJM shock spread")
     
     # Create the tables with the updated data
-    table1 = main_table(table_df, ["NYISpjm shock X forecast", "NYIS pjm DA regular prediction"], "main_table", display)
-    table2 = main_table(table_df, ["NYISpjm shock X forecast", "NYIS pjm DA regular prediction"], "main_table2", display)
-
+    table1 = main_table(table_df, ["NYISpjm shock X forecast", "NYIS pjm DA regular prediction"], "main_table", display, main_table_slider)
+    table2 = main_table(table_df, ["PJMnyis shock X forecast", "PJM nyis DA regular prediction"], "main_table2", display, main_table2_slider)
+    
     # Return the updated figures and table components
-    return graph1, graph2, graphS, table1, table2
+    return graph1, graph2, graphS, graphS2, table1, table2, slider_display, slider_display
 
 # Run the Dash application
 if __name__ == "__main__":

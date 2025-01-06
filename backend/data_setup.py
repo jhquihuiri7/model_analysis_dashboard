@@ -1,7 +1,22 @@
 from backend.Class import Ops
 from datetime import date, time, datetime, timedelta
 
+def calculate_user_predictions(df, lower_prediction_column_str, upper_prediction_column_str, slider_percentage):
+    percentage = slider_percentage / 100.0
+    user_predictions = []
+    for index, row in df.iterrows():
+        regular_model = row[lower_prediction_column_str]
+        shock_model = row[upper_prediction_column_str]
+        abs_difference = abs(shock_model - regular_model)
+        if shock_model > regular_model:
+            prediction = regular_model + (abs_difference * percentage)
+        else:
+            prediction = shock_model + (abs_difference * percentage)
+        user_predictions.append(prediction)
+    return user_predictions
+
 def setup_data():
+
     start_date = "2024-12-15"
     end_date = "2024-12-31"
     features_list = [
@@ -41,14 +56,14 @@ def setup_data():
     actual.create_feature([{"Feature": "PJMnyis shock X forecast"},{"Feature": "NYISpjm shock X forecast", "Operation": "-"}], False, "NYIS to PJM shock spread")
     actual.create_feature([{"Feature": "NYIS pjm DA"},{"Feature": "PJM nyis DA", "Operation": "-"}], False, "PJM to NYIS spread")
     actual.create_feature([{"Feature": "NYISpjm shock X forecast"},{"Feature": "PJMnyis shock X forecast", "Operation": "-"}], False, "PJM to NYIS shock spread")
-
+    
     return actual
 
 
 # Predict toggle: 
-#   When this toggle is off it should show the layout described below with all the data in the dataframe
-#   but the tables should be hidden.
-#   When the toggle is on it should only show the last day of data in the dataframe with the exact layout described below.
+#   ✓ When this toggle is off it should show the layout described below with all the data in the dataframe
+#   but the tables should be hidden. 
+#   ✓ When the toggle is on it should only show the last day of data in the dataframe with the exact layout described below.
 
 # App layout:
 #   Graph one should show the regular forcast(NYIS pjm DA regular prediction), the shock forcast(NYISpjm shock X forecast), and the actuals(NYIS pjm DA) for NYIS pjm.

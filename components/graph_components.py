@@ -20,16 +20,16 @@ def main_graph(df, col1, col2, col3):
     fig = go.Figure()
     
     # Add the first time series to the figure (NYISpjm shock x forecast)
-    fig.add_trace(go.Scatter(x=df.index, y=df[col1], mode='lines', name="NYISpjm shock x forecast", line_shape='hv'))
+    fig.add_trace(go.Scatter(x=df.index, y=df[col1], mode='lines', name=col1, line_shape='hv'))
     
     # Add the second time series to the figure (NYIS pjm DA regular prediction)
-    fig.add_trace(go.Scatter(x=df.index, y=df[col2], mode='lines', name="NYIS pjm DA regular prediction", line_shape='hv'))
+    fig.add_trace(go.Scatter(x=df.index, y=df[col2], mode='lines', name=col2, line_shape='hv'))
     
     # Add the third time series to the figure (Actuals)
-    fig.add_trace(go.Scatter(x=df.index, y=df[col3], mode='lines', name="Actuals", line_shape='hv'))
+    fig.add_trace(go.Scatter(x=df.index, y=df[col3], mode='lines', name=col3, line_shape='hv'))
     
     # Use the assign_color function to determine the color for each time period
-    colors = assign_color(df=df, col1="NYISpjm shock X forecast", col2="NYIS pjm DA regular prediction")
+    colors = assign_color(df=df, col1=col1, col2=col2)
 
     # Create shaded areas between the two time series (col2 and col1) based on their relative values
     for i in range(len(df)-1):
@@ -73,7 +73,7 @@ def spread_graph(df, col1):
     
     # Add the time series to the figure (PJM to NYIS Shock models predicted spread)
     fig.add_trace(go.Scatter(x=df.index, y=df[col1], mode='lines', 
-                              name="PJM to NYIS Shock models predicted spread", line_shape='hv'))
+                              name=col1, line_shape='hv'))
 
     # Use the assign_color function to determine the color for the time periods
     colors = assign_color(df=df, col1=col1, col2=None, base_zero=True)

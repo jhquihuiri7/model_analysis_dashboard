@@ -1,7 +1,7 @@
 import dash_daq as daq
 
 # Import the HTML module from Dash
-from dash import html
+from dash import html, dcc
 
 def last_day_toggle():
     """
@@ -25,3 +25,15 @@ def last_day_toggle():
         ),
         className="ml-5 w-[150px] mb-5"  # CSS class for layout: margin-left, width, and bottom margin
     )
+
+def table_slider(id, display=False):
+    return html.Div(
+                children=[
+                    #html.H3("Adjust predictions offset ", className="mb-2"),
+                    dcc.Slider(min=0, max=100, step=10, value=0, 
+                           marks={i: f"{i}%" for i in range(0, 101, 10)},
+                           id=id,
+                           className="inline w-full" if display else "hidden w-full")
+                ],
+                className="w-full mt-5"
+            )
