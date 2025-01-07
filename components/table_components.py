@@ -2,9 +2,14 @@ import dash_mantine_components as dmc
 import numpy as np
 import pandas as pd
 from backend.data_setup import calculate_user_predictions
+import utils.export_variables as variables
 # Dash imports
-from dash import html, dcc
+from dash import html
 import dash_ag_grid as dag
+
+import warnings
+warnings.filterwarnings("ignore")
+#import app
 
 def main_table(df, cols, id, display=False, slider_value=0 ):
     """
@@ -20,7 +25,6 @@ def main_table(df, cols, id, display=False, slider_value=0 ):
     Returns:
     dash_html_components.Div: A Div element containing a Dash table with the data from `df`.
     """
-    
     data = pd.DataFrame(0, index=range(3), columns=["Hour"])
     data["Hour"] = cols + ["User Prediction"]
     for i in range(0,24):
@@ -30,15 +34,20 @@ def main_table(df, cols, id, display=False, slider_value=0 ):
     if not df.empty:  
         last_day = df.index.max().date()  # Get the latest date from the DataFrame index
         df = df[df.index.date == last_day]# Filter rows for the latest day
-        for index, col in enumerate(cols):
+        df["User Prediction"] = calculate_user_predictions(df, cols[1], cols[0],slider_value)
+        for index, col in enumerate(cols+["User Prediction"]):
             data.loc[index, "Hour"] = col
-            data.iloc[index, 1:] = df[col]  # Aseguramos que el tamaño sea el adecuado
-        data.loc[2, "Hour"] = "User Prediction"
-        data.iloc[2, 1:] = calculate_user_predictions(df, cols[1], cols[0],slider_value)
+            data.iloc[index, 1:] = df[col]
+        data = data.round(2)
+        if id == "main_table":
+            variables.export_df1 = df[cols+["User Prediction"]]
+        else:
+            variables.export_df2 = df[cols+["User Prediction"]]
+        
   
     return html.Div(
-        children = [
-            dag.AgGrid(
+    children=[
+        dag.AgGrid(
             columnDefs=[
                 {"field": str(col), "width": 150, 'suppressSizeToFit': True} if index == 0 else {"field": str(col)}
                 for index, col in enumerate(data.columns)
@@ -46,12 +55,11 @@ def main_table(df, cols, id, display=False, slider_value=0 ):
             rowData=data.to_dict("records"),
             columnSize="sizeToFit",
             defaultColDef={"editable": True, "minWidth": 30},
-            dashGridOptions={"animateRows": False, "rowSelection":'single'},
-            style={"height": "100%", 'display': 'inline'} if display else {"height": "100%", 'display': 'none'},  # Display table based on `display` flag
+            dashGridOptions={"animateRows": False, "rowSelection": "single", "domLayout": "autoHeight"},
+            style = {"height": None}
         )
-        ],
-        className="w-full h-[180px] mb-10",
-        id=id,
-    )
+    ],
+    className="w-full mb-10 inline" if display else "w-full mb-10 hidden",
+)
 
 
