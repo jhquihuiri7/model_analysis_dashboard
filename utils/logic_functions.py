@@ -1,3 +1,6 @@
+import pandas as pd
+from backend.data_setup import calculate_user_predictions
+
 def assign_color(df, col1, col2, base_zero=False):
     """
     This function assigns colors based on the comparison between two columns in a DataFrame.
@@ -35,3 +38,14 @@ def assign_color(df, col1, col2, base_zero=False):
     
     # Return the list of assigned colors
     return colors
+
+
+def parse_table_data(data, df_index):
+    df = pd.DataFrame(data)
+    df = df.set_index("Hour").T
+    if not df.empty:
+        df.insert(0, 'Datetime (HB)', df_index)
+    return df
+
+
+    

@@ -1,7 +1,8 @@
 import plotly.graph_objects as go
 from utils.logic_functions import assign_color
+from backend.data_setup import calculate_user_predictions
 
-def main_graph(df, col1, col2, col3):
+def main_graph(df, col1, col2, col3, show_user_prediction=False, slider_value=0, prevent_calculating_prediction=False):
     """
     This function creates a Plotly graph comparing three different time series data 
     from the DataFrame, with color filling between two series based on their relative values.
@@ -15,6 +16,9 @@ def main_graph(df, col1, col2, col3):
     Returns:
     plotly.graph_objects.Figure: The Plotly figure object containing the graph.
     """
+    if show_user_prediction:
+        if not prevent_calculating_prediction:
+            df["User Prediction"] = calculate_user_predictions(df, col2, col1,slider_value)
     
     # Initialize a new figure for the graph
     fig = go.Figure()
@@ -28,9 +32,12 @@ def main_graph(df, col1, col2, col3):
     # Add the third time series to the figure (Actuals)
     fig.add_trace(go.Scatter(x=df.index, y=df[col3], mode='lines', name=col3, line_shape='hv'))
     
+
+    if show_user_prediction:
+        fig.add_trace(go.Scatter(x=df.index, y=df['User Prediction'], mode='lines', name="User Prediction", line_shape='hv'))
     # Use the assign_color function to determine the color for each time period
     colors = assign_color(df=df, col1=col1, col2=col2)
-
+    
     # Create shaded areas between the two time series (col2 and col1) based on their relative values
     for i in range(len(df)-1):
         fig.add_trace(go.Scatter(

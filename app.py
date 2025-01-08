@@ -1,11 +1,13 @@
 import io
 
 # Dash imports: Essential components for creating the Dash web application
-from dash import Dash, dcc, html, Input, Output, _dash_renderer, callback_context
+from dash import Dash, dcc, html, Input, Output, _dash_renderer, callback_context, State, exceptions
+
 
 # Backend imports: Data setup logic from the backend module
 from backend.data_setup import setup_data
 import utils.export_variables as variables
+from utils.logic_functions import parse_table_data
 
 # External libraries: Libraries for data visualization (Plotly) and handling data (pandas)
 import plotly.graph_objects as go
@@ -98,27 +100,27 @@ app.layout = dmc.MantineProvider(
         ]
     )
 )
+
 @app.callback(
-    Output("download-data", "data"),
+    Output("download-data", "data", allow_duplicate=True),
     Input("download_button", "n_clicks"),
     Input("download_button2", "n_clicks"),
-    prevent_initial_call=True,
+    State("main_table_data", "rowData"),
+    State("main_table2_data", "rowData"),
+    prevent_initial_call=True
 )
-def download_logic(download_button, download_button2):
+def download_logic(download_button, download_button2, main_table_data, main_table2_data):
     ctx = callback_context
     triggered_id = ctx.triggered[0]["prop_id"].split(".")[0] if ctx.triggered else None
     
     buffer = io.StringIO()
     export_df = pd.DataFrame()
     if triggered_id == "download_button":
-        export_df = variables.export_df1
+        export_df = parse_table_data(main_table_data, variables.export_df1.index)
     else:
-        export_df = variables.export_df2
+        export_df = parse_table_data(main_table2_data, variables.export_df2.index)
         
-    export_df.reset_index(inplace=True)
-    export_df.rename(columns={'datetime': 'Datetime (HB)'}, inplace=True)
     export_df.to_csv(buffer, index=False, encoding="utf-8")
-        
     buffer.seek(0)
     
     return dict(content=buffer.getvalue(), filename="data.csv")
@@ -135,9 +137,18 @@ def download_logic(download_button, download_button2):
      Output("main_table2_slider_container", "className")],
     [Input("last_day_toggle", "value"),
      Input("main_table_slider","value"),
-     Input("main_table2_slider","value")],
+     Input("main_table2_slider","value"),
+     Input("main_table_data", "cellValueChanged"),
+     Input("main_table2_data", "cellValueChanged")],
+    [State("main_table_data", "rowData"),
+     State("main_table2_data", "rowData"),
+     State("main_table", "children"),
+     State("main_table2", "children")],
 )
-def update_dashboard(last_day_toggle, main_table_slider, main_table2_slider):
+def update_dashboard(last_day_toggle, main_table_slider, main_table2_slider, main_table_data, main_table2_data,main_table_data_state, main_table2_data_state, main_table_state, main_table2_state):
+    
+    ctx = callback_context
+    triggered_id = ctx.triggered[0]["prop_id"].split(".")[0] if ctx.triggered else None
     
     # Access the data from the client
     df = client.df
@@ -154,8 +165,8 @@ def update_dashboard(last_day_toggle, main_table_slider, main_table2_slider):
     slider_className="inline mt-5 w-full" if display else "hidden mt-5 w-full"
       
     # Create the graphs with the updated data
-    graph1 = main_graph(df, "NYISpjm shock X forecast", "NYIS pjm DA regular prediction", "NYIS pjm DA") 
-    graph2 = main_graph(df, "PJMnyis shock X forecast", "PJM nyis DA regular prediction", "PJM nyis DA")
+    graph1 = main_graph(df, "NYISpjm shock X forecast", "NYIS pjm DA regular prediction", "NYIS pjm DA", display, main_table_slider) 
+    graph2 = main_graph(df, "PJMnyis shock X forecast", "PJM nyis DA regular prediction", "PJM nyis DA", display, main_table2_slider)
     graphS = spread_graph(df, "PJM to NYIS shock spread")
     graphS2 = spread_graph(df, "NYIS to PJM shock spread")
     
@@ -163,8 +174,32 @@ def update_dashboard(last_day_toggle, main_table_slider, main_table2_slider):
     table1 = main_table(table_df, ["NYISpjm shock X forecast", "NYIS pjm DA regular prediction"], "main_table",display, main_table_slider)
     table2 = main_table(table_df, ["PJMnyis shock X forecast", "PJM nyis DA regular prediction"], "main_table2",display, main_table2_slider)
     
+
+    if triggered_id == "main_table_data":
+        try:
+            export_df = parse_table_data(main_table_data_state, df.index)
+            if not export_df.empty:
+                export_df.set_index('Datetime (HB)', inplace=True)
+                export_df["NYIS pjm DA"] = df["NYIS pjm DA"]
+                
+            graph1 = main_graph(export_df, "NYISpjm shock X forecast", "NYIS pjm DA regular prediction", "NYIS pjm DA", display, main_table_slider, True)
+            table1 = main_table_state
+        except Exception as e:
+            pass
+        
+    if triggered_id == "main_table2_data":
+        try:
+            export_df = parse_table_data(main_table2_data_state, df.index)
+            if not export_df.empty:
+                export_df.set_index('Datetime (HB)', inplace=True)
+                export_df["PJM nyis DA"] = df["PJM nyis DA"]
+            graph2 =  main_graph(export_df, "PJMnyis shock X forecast", "PJM nyis DA regular prediction", "PJM nyis DA", display, main_table2_slider, True)
+            table2 = main_table2_state
+        except:
+            pass
     # Return the updated figures and table components
     return graph1, graph2, graphS, graphS2, table1, table2, slider_className, slider_className
+
 
 # Run the Dash application
 if __name__ == "__main__":

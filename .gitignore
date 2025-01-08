@@ -7,3 +7,4 @@ venv/
 *.pyo
 
 test.py
+app_example.py

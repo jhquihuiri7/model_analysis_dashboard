@@ -56,7 +56,8 @@ def main_table(df, cols, id, display=False, slider_value=0 ):
             columnSize="sizeToFit",
             defaultColDef={"editable": True, "minWidth": 30},
             dashGridOptions={"animateRows": False, "rowSelection": "single", "domLayout": "autoHeight"},
-            style = {"height": None}
+            style = {"height": None},
+            id=f"{id}_data"
         )
     ],
     className="w-full mb-10 inline" if display else "w-full mb-10 hidden",
