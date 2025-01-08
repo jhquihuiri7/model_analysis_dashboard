@@ -28,14 +28,7 @@ def main_graph(df, col1, col2, col3, show_user_prediction=False, slider_value=0,
     
     # Add the second time series to the figure (NYIS pjm DA regular prediction)
     fig.add_trace(go.Scatter(x=df.index, y=df[col2], mode='lines', name=col2, line_shape='hv'))
-    
-    # Add the third time series to the figure (Actuals)
-    fig.add_trace(go.Scatter(x=df.index, y=df[col3], mode='lines', name=col3, line_shape='hv'))
-    
 
-    if show_user_prediction:
-        fig.add_trace(go.Scatter(x=df.index, y=df['User Prediction'], mode='lines', name="User Prediction", line_shape='hv'))
-    # Use the assign_color function to determine the color for each time period
     colors = assign_color(df=df, col1=col1, col2=col2)
     
     # Create shaded areas between the two time series (col2 and col1) based on their relative values
@@ -48,6 +41,13 @@ def main_graph(df, col1, col2, col3, show_user_prediction=False, slider_value=0,
             line=dict(color='rgba(255,255,255,0)'),  # Set the line to be transparent
             showlegend=False, hoverinfo='none'  # Hide the legend and hover information
         ))
+    
+    # Add the third time series to the figure (Actuals)
+    fig.add_trace(go.Scatter(x=df.index, y=df[col3], mode='lines', name=col3, line_shape='hv'))
+    
+    if show_user_prediction:
+        fig.add_trace(go.Scatter(x=df.index, y=df['User Prediction'], mode='lines', name="User Prediction", line_shape='hv'))
+    # Use the assign_color function to determine the color for each time period
     
     # Update the layout with axis labels, range, and legend settings
     fig.update_layout(
