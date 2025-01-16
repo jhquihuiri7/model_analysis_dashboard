@@ -46,7 +46,7 @@ def main_graph(df, col1, col2, col3, show_user_prediction=False, slider_value=0,
     fig.add_trace(go.Scatter(x=df.index, y=df[col3], mode='lines', name=col3, line_shape='hv'))
     
     if show_user_prediction:
-        fig.add_trace(go.Scatter(x=df.index, y=df['User Prediction'], mode='lines', name="User Prediction", line_shape='hv'))
+        fig.add_trace(go.Scatter(x=df.index, y=df['User Prediction'], mode='lines', name="User Prediction", line_shape='hv', line=dict(color='black')))
     # Use the assign_color function to determine the color for each time period
     
     # Update the layout with axis labels, range, and legend settings
